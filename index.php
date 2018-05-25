@@ -7,6 +7,8 @@ use Slim\Http\UploadedFile;
 require 'vendor/autoload.php';
 
 $app = new \Slim\App([
+    // Error details set to false if mode = Production
+    // Debug set to False if mode = Production
     'displayErrorDetails' => true,
     'debug' => true,
 ]);
@@ -42,7 +44,7 @@ $c['notAllowedHandler'] = function ($c) {
 };
 
 $c['db'] = function ($c) {
-    $pdo = new PDO("mysql:host=localhost;dbname=momasa","","");
+    $pdo = new PDO("mysql:host=localhost;dbname=miniserv_rizal","foki","poke");
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     return $pdo;
@@ -52,54 +54,88 @@ $c['db'] = function ($c) {
 $c['updir'] = __DIR__ . '/static/img';
 
 $app->get('/', function (Request $req, Response $res) {
-    $res->getBody()->write("Welcome to momasa service");
+    $res->getBody()->write("Welcome to mini service");
     return $res;
 });
 
 // Get all data
-$app->get('/resep/list', function (Request $req, Response $res) {
-    $resep = $this->db->query("SELECT * FROM resep")->fetchAll();
-    return $res->withJson($resep);
+$app->get('/product/list', function (Request $req, Response $res) {
+
+    $category = $req->getParam('category');
+    $search = $req->getParam('search');
+    $toko = $req->getParam('toko');
+
+    if ($category) {
+        $stmt = $this->db->prepare('SELECT * FROM produk WHERE kategori=:kategori');
+        $stmt->execute(['kategori' => $category]);
+        $produk = $stmt->fetchAll();
+    }
+
+    if ($search) {
+        $stmt = $this->db->prepare('SELECT * FROM produk WHERE nama_barang LIKE :search');
+        $stmt->execute([':search' => '%'.$search.'%']);
+        $produk = $stmt->fetchAll();
+    }
+
+    if ($toko) {
+        $stmt = $this->db->prepare('SELECT * FROM produk WHERE uid=:uid');
+        $stmt->execute(['uid' => $toko]);
+        $produk = $stmt->fetchAll();
+    }
+
+    if (!$category && !$search && !$toko) {
+        $produk = $this->db->query("SELECT * FROM produk")->fetchAll();
+    }
+
+    return $res->withJson($produk);
+
 });
 
 // Get data by id
-$app->get('/resep/detail/{id}', function (Request $req, Response $res, array $args) {
-    $stmt = $this->db->prepare('SELECT * FROM resep WHERE id = :id');
+$app->get('/product/detail/{id}', function (Request $req, Response $res, array $args) {
+    $stmt = $this->db->prepare('SELECT * FROM produk WHERE produk_id=:id');
     $stmt->execute(['id' => $args['id']]);
-    $resep = $stmt->fetch();
-    return $res->withJson($resep);
+    $produk = $stmt->fetch();
+    return $res->withJson($produk);
 });
 
 // Insert data by id
-$app->post('/resep/store', function (Request $req, Response $res) {
+$app->post('/product/store', function (Request $req, Response $res) {
 
     $params = $req->getParsedBody();
 
-    $directory = $this->get('updir');
-    $uploadedFiles = $req->getUploadedFiles();
-    $uploadedFile = $uploadedFiles['gambar'];
-    if ($uploadedFile->getError() === UPLOAD_ERR_OK) {
-        $filename = moveUploadedFile($directory, $uploadedFile);
-    }
+    // $directory = $this->get('updir');
+    // $uploadedFiles = $req->getUploadedFiles();
+    // $uploadedFile = $uploadedFiles['gambar'];
+    // if ($uploadedFile->getError() === UPLOAD_ERR_OK) {
+    //     $filename = moveUploadedFile($directory, $uploadedFile);
+    // }
 
     $row = [
-        'title' => $params['title'],
-        'desc' => $params['desc'],
-        'langkah' => $params['langkah'],
-        'bahan' => $params['bahan'],
-        'gambar' => $filename
+        'uid' => $params['uid'],
+        'nama_barang' => $params['nama_barang'],
+        'kategori' => $params['kategori'],
+        'harga' => $params['harga'],
+        'keterangan' => $params['keterangan'],
+        'pic' => $params['pic'],
+        'lat' => $params['lat'],
+        'lon' => $params['lon']
     ];
 
     $status = $this->db
-                ->prepare(
-                        "INSERT INTO resep SET
-                        title=:title,
-                        desc=:desc,
-                        langkah=:langkah,
-                        bahan=:bahan,
-                        gambar=:gambar;"
-                    )
-                ->execute($row);
+            ->prepare(
+                    "INSERT INTO produk SET
+                    uid=:uid,
+                    nama_barang=:nama_barang,
+                    kategori=:kategori,
+                    harga=:harga,
+                    keterangan=:keterangan,
+                    pic=:pic,
+                    lat=:lat,
+                    lon=:lon;"
+                )
+            ->execute($row);
+
 
     if ($status) {
         return $res->getBody()->write("Data created!");
@@ -108,35 +144,41 @@ $app->post('/resep/store', function (Request $req, Response $res) {
 });
 
 // Update data by id
-$app->post('/resep/update/{id}', function (Request $req, Response $res, array $args) {
+$app->post('/product/update/{id}', function (Request $req, Response $res, array $args) {
 
     $params = $req->getParsedBody();
 
-    $directory = $this->get('updir');
-    $uploadedFiles = $req->getUploadedFiles();
-    $uploadedFile = $uploadedFiles['gambar'];
-    if ($uploadedFile->getError() === UPLOAD_ERR_OK) {
-        $filename = moveUploadedFile($directory, $uploadedFile);
-    }
+    // $directory = $this->get('updir');
+    // $uploadedFiles = $req->getUploadedFiles();
+    // $uploadedFile = $uploadedFiles['gambar'];
+    // if ($uploadedFile->getError() === UPLOAD_ERR_OK) {
+    //     $filename = moveUploadedFile($directory, $uploadedFile);
+    // }
 
     $row = [
         'id' => $args['id'],
-        'title' => $params['title'],
-        'desc' => $params['desc'],
-        'langkah' => $params['langkah'],
-        'bahan' => $params['bahan'],
-        'gambar' => $filename
+        'uid' => $params['uid'],
+        'nama_barang' => $params['nama_barang'],
+        'kategori' => $params['kategori'],
+        'harga' => $params['harga'],
+        'keterangan' => $params['keterangan'],
+        'pic' => $params['pic'],
+        'lat' => $params['lat'],
+        'lon' => $params['lon']
     ];
 
     $status = $this->db
                 ->prepare(
-                        "UPDATE resep SET
-                        title=:title,
-                        desc=:desc,
-                        langkah=:langkah,
-                        bahan=:bahan,
-                        gambar=:gambar
-                        WHERE id=:id;"
+                        "UPDATE produk SET
+                        uid=:uid,
+                        nama_barang=:nama_barang,
+                        kategori=:kategori,
+                        harga=:harga,
+                        keterangan=:keterangan,
+                        pic=:pic,
+                        lat=:lat,
+                        lon=:lon
+                        WHERE produk_id=:id;"
                     )
                 ->execute($row);
 
@@ -146,9 +188,9 @@ $app->post('/resep/update/{id}', function (Request $req, Response $res, array $a
 });
 
 // Delete data by id
-$app->get('/resep/delete/{id}', function (Request $req, Response $res, array $args) {
+$app->get('/product/delete/{id}', function (Request $req, Response $res, array $args) {
     $where = ['id' => $args['id']];
-    $exe = $this->db->prepare("DELETE FROM resep WHERE id=:id")->execute($where);
+    $exe = $this->db->prepare("DELETE FROM produk WHERE produk_id=:id")->execute($where);
     if ($exe) {
         return $res->getBody()->write("Data deleted!");
     }
@@ -172,6 +214,5 @@ function getBaseUrl()
     $protocol = strtolower(substr($_SERVER["SERVER_PROTOCOL"],0,5))=='https'?'https':'http';
     return $protocol.'://'.$hostName;
 }
-
 
 $app->run();
