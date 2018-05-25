@@ -42,7 +42,7 @@ $c['notAllowedHandler'] = function ($c) {
 };
 
 $c['db'] = function ($c) {
-    $pdo = new PDO("mysql:host=localhost;dbname=momasa","","");
+    $pdo = new PDO("mysql:host=localhost;dbname=name","user","password");
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     return $pdo;
@@ -52,9 +52,12 @@ $c['db'] = function ($c) {
 $c['updir'] = __DIR__ . '/static/img';
 
 $app->get('/', function (Request $req, Response $res) {
-    $res->getBody()->write("Welcome to momasa service");
+    $res->getBody()->write("Welcome to mini service");
     return $res;
 });
+
+
+// ================= EXAMPLE ROUTE ========================== //
 
 // Get all data
 $app->get('/resep/list', function (Request $req, Response $res) {
@@ -154,6 +157,7 @@ $app->get('/resep/delete/{id}', function (Request $req, Response $res, array $ar
     }
 });
 
+// ================= EXAMPLE ROUTE ========================== //
 
 function moveUploadedFile($directory, UploadedFile $uploadedFile)
 {
