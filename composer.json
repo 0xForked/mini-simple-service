@@ -1,0 +1,13 @@
+{
+    "name": "aasumitro/mini-service",
+    "description": "Small service with slim 3",
+    "require": {
+        "slim/slim": "3.0"
+    },
+    "authors": [
+        {
+            "name": "Agus Adhi Sumitro",
+            "email": "aasumitro@gmail.com"
+        }
+    ]
+}
