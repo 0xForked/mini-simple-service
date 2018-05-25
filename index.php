@@ -87,7 +87,10 @@ $app->get('/product/list', function (Request $req, Response $res) {
         $produk = $this->db->query("SELECT * FROM produk")->fetchAll();
     }
 
-    return $res->withJson($produk);
+    return $res->withJson(array(
+        "value" => 1,
+        "result" => $produk
+    ));
 
 });
 
@@ -96,7 +99,12 @@ $app->get('/product/detail/{id}', function (Request $req, Response $res, array $
     $stmt = $this->db->prepare('SELECT * FROM produk WHERE produk_id=:id');
     $stmt->execute(['id' => $args['id']]);
     $produk = $stmt->fetch();
-    return $res->withJson($produk);
+
+    return $res->withJson(array(
+        "value" => 1,
+        "result" => $produk
+    ));
+
 });
 
 // Insert data by id
@@ -138,7 +146,15 @@ $app->post('/product/store', function (Request $req, Response $res) {
 
 
     if ($status) {
-        return $res->getBody()->write("Data created!");
+        return $res->withJson(array(
+            "value" => 1,
+            "Message" => "Berhasil dibuat"
+        ));
+    } else {
+        return $res->withJson(array(
+            "value" => 0,
+            "Message" => "Gagal dibuat"
+        ));
     }
 
 });
@@ -157,7 +173,6 @@ $app->post('/product/update/{id}', function (Request $req, Response $res, array 
 
     $row = [
         'id' => $args['id'],
-        'uid' => $params['uid'],
         'nama_barang' => $params['nama_barang'],
         'kategori' => $params['kategori'],
         'harga' => $params['harga'],
@@ -170,7 +185,6 @@ $app->post('/product/update/{id}', function (Request $req, Response $res, array 
     $status = $this->db
                 ->prepare(
                         "UPDATE produk SET
-                        uid=:uid,
                         nama_barang=:nama_barang,
                         kategori=:kategori,
                         harga=:harga,
@@ -182,18 +196,37 @@ $app->post('/product/update/{id}', function (Request $req, Response $res, array 
                     )
                 ->execute($row);
 
-    if ($status) {
-        return $res->getBody()->write("Data updated!");
+     if ($status) {
+         return $res->withJson(array(
+            "value" => 1,
+            "Message" => "Berhasil diupdate"
+        ));
+    } else {
+        return $res->withJson(array(
+            "value" => 0,
+            "Message" => "Gagal diupdate"
+        ));
     }
+
 });
 
 // Delete data by id
 $app->get('/product/delete/{id}', function (Request $req, Response $res, array $args) {
     $where = ['id' => $args['id']];
     $exe = $this->db->prepare("DELETE FROM produk WHERE produk_id=:id")->execute($where);
+
     if ($exe) {
-        return $res->getBody()->write("Data deleted!");
+        return $res->withJson(array(
+            "value" => 1,
+            "Message" => "Berhasil dihapus"
+        ));
+    } else {
+        return $res->withJson(array(
+            "value" => 0,
+            "Message" => "Gagal dihapus"
+        ));
     }
+
 });
 
 
